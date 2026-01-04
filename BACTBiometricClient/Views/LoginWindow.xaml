@@ -1,0 +1,373 @@
+﻿<Window x:Class="BACTBiometricClient.Views.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="BACT Biometric Client - Login"
+        Height="680" Width="400"
+        MinHeight="650" MinWidth="380"
+        MaxWidth="450"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResizeWithGrip"
+        Background="Transparent"
+        AllowsTransparency="True"
+        WindowStyle="None">
+
+    <Window.Resources>
+        <!-- Enhanced Primary Button -->
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#1565C0"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="20,14"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#1565C0" BlurRadius="8" ShadowDepth="0" Opacity="0.3"/>
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#0D47A1"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#BDBDBD"/>
+                    <Setter Property="Cursor" Value="Arrow"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Enhanced Input Field -->
+        <Style x:Key="ModernInput" TargetType="Control">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="BorderBrush" Value="#E0E0E0"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Background" Value="White"/>
+        </Style>
+
+        <Style x:Key="ModernTextBox" TargetType="TextBox" BasedOn="{StaticResource ModernInput}">
+            <Setter Property="Foreground" Value="#263238"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ScrollViewer x:Name="PART_ContentHost" 
+                                          Padding="{TemplateBinding Padding}"
+                                          VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsFocused" Value="True">
+                    <Setter Property="BorderBrush" Value="#1565C0"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="#42A5F5"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ModernPasswordBox" TargetType="PasswordBox" BasedOn="{StaticResource ModernInput}">
+            <Setter Property="Foreground" Value="#263238"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="PasswordBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ScrollViewer x:Name="PART_ContentHost" 
+                                          Padding="{TemplateBinding Padding}"
+                                          VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsFocused" Value="True">
+                    <Setter Property="BorderBrush" Value="#1565C0"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="#42A5F5"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Status Alert Styles -->
+        <Style x:Key="ErrorAlert" TargetType="Border">
+            <Setter Property="Background" Value="#FFEBEE"/>
+            <Setter Property="BorderBrush" Value="#F44336"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="16,12"/>
+        </Style>
+
+        <Style x:Key="WarningAlert" TargetType="Border">
+            <Setter Property="Background" Value="#FFF8E1"/>
+            <Setter Property="BorderBrush" Value="#FF9800"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="16,12"/>
+        </Style>
+    </Window.Resources>
+
+    <!-- Compact Modern Design -->
+    <Border Background="White" CornerRadius="12">
+        <Border.Effect>
+            <DropShadowEffect Color="#263238" BlurRadius="25" ShadowDepth="0" Opacity="0.12"/>
+        </Border.Effect>
+        
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Compact Header -->
+            <Border Grid.Row="0" CornerRadius="12,12,0,0">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#0D47A1" Offset="0"/>
+                        <GradientStop Color="#1976D2" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <StackPanel Margin="25,20,25,20">
+                    <!-- Compact Logo -->
+                    <Border Background="White" 
+                            CornerRadius="10" 
+                            Width="50" 
+                            Height="50"
+                            HorizontalAlignment="Center"
+                            Margin="0,0,0,10">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#0D47A1" BlurRadius="8" ShadowDepth="0" Opacity="0.2"/>
+                        </Border.Effect>
+                        <TextBlock Text="🔐" 
+                                   FontSize="24" 
+                                   HorizontalAlignment="Center" 
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    
+                    <TextBlock Text="BACT BIOMETRIC"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Foreground="White"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,2"/>
+                    <TextBlock Text="Admission Portal System"
+                               FontSize="11"
+                               Foreground="#BBDEFB"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Compact Main Content -->
+            <StackPanel Grid.Row="1" Margin="25,25,25,20">
+                <!-- Compact Welcome -->
+                <TextBlock Text="Welcome Back"
+                           FontSize="18"
+                           FontWeight="Bold"
+                           Foreground="#263238"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,4"/>
+                <TextBlock Text="Sign in to access the system"
+                           FontSize="12"
+                           Foreground="#607D8B"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,20"/>
+
+                <!-- Email Field -->
+                <StackPanel Margin="0,0,0,16">
+                    <TextBlock Text="Email Address" 
+                               FontSize="12" 
+                               FontWeight="SemiBold"
+                               Foreground="#37474F" 
+                               Margin="0,0,0,4"/>
+                    <TextBox x:Name="txtEmail"
+                             Style="{StaticResource ModernTextBox}"
+                             Text=""
+                             TabIndex="1"
+                             Height="45"
+                             FontSize="16"/>
+                </StackPanel>
+
+                <!-- Password Field -->
+                <StackPanel Margin="0,0,0,16">
+                    <TextBlock Text="Password" 
+                               FontSize="12" 
+                               FontWeight="SemiBold"
+                               Foreground="#37474F" 
+                               Margin="0,0,0,4"/>
+                    <Grid>
+                        <PasswordBox x:Name="txtPassword"
+                                     Style="{StaticResource ModernPasswordBox}"
+                                     Password=""
+                                     TabIndex="2"
+                                     Height="45"
+                                     FontSize="16"
+                                     Visibility="Visible"/>
+                        <TextBox x:Name="txtPasswordVisible"
+                                 Style="{StaticResource ModernTextBox}"
+                                 Text=""
+                                 TabIndex="2"
+                                 Height="45"
+                                 FontSize="16"
+                                 Visibility="Collapsed"/>
+                        
+                        <!-- Eye Icon -->
+                        <Button x:Name="btnTogglePassword"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Width="35"
+                                Height="35"
+                                Margin="0,0,8,0"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Cursor="Hand"
+                                Click="BtnTogglePassword_Click"
+                                ToolTip="Show/Hide Password">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" 
+                                            CornerRadius="6"
+                                            Padding="6">
+                                        <TextBlock x:Name="EyeIcon" 
+                                                   Text="👁️" 
+                                                   FontSize="14" 
+                                                   Foreground="#607D8B"
+                                                   HorizontalAlignment="Center" 
+                                                   VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#F5F5F5"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </Grid>
+                </StackPanel>
+
+                <!-- Remember Me -->
+                <CheckBox x:Name="chkRememberMe"
+                          Content="Keep me signed in"
+                          FontSize="11"
+                          Foreground="#607D8B"
+                          Margin="0,0,0,18"/>
+
+                <!-- Status Messages -->
+                <Border x:Name="borderStatus"
+                        Style="{StaticResource ErrorAlert}"
+                        Margin="0,0,0,16"
+                        Visibility="Collapsed">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="⚠️" FontSize="12" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="txtStatus"
+                                   FontSize="11"
+                                   FontWeight="SemiBold"
+                                   Foreground="#C62828"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="borderConnectionStatus"
+                        Style="{StaticResource WarningAlert}"
+                        Margin="0,0,0,16"
+                        Visibility="Collapsed">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🌐" FontSize="12" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <StackPanel>
+                            <TextBlock Text="Connection Status" 
+                                       FontSize="9" 
+                                       FontWeight="Bold"
+                                       Foreground="#E65100"/>
+                            <TextBlock x:Name="txtConnectionStatus"
+                                       FontSize="10"
+                                       Foreground="#F57C00"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Login Button -->
+                <Button x:Name="btnLogin"
+                        Content="SIGN IN"
+                        Style="{StaticResource PrimaryButton}"
+                        Height="48"
+                        FontSize="16"
+                        Click="BtnLogin_Click"/>
+
+                <!-- Loading Indicator -->
+                <StackPanel x:Name="panelLoading"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            Margin="0,16,0,0"
+                            Visibility="Collapsed">
+                    <Border Background="#E3F2FD" 
+                            CornerRadius="15" 
+                            Padding="8,4">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⏳" FontSize="10" Margin="0,0,4,0"/>
+                            <TextBlock Text="Signing in..."
+                                       FontSize="10"
+                                       FontWeight="SemiBold"
+                                       Foreground="#1565C0"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Compact Footer -->
+            <Border Grid.Row="2" 
+                    Background="#FAFAFA" 
+                    CornerRadius="0,0,12,12"
+                    Padding="25,15">
+                <StackPanel>
+                    <!-- Help Text -->
+                    <Border Background="White" 
+                            CornerRadius="6" 
+                            Padding="12,8"
+                            Margin="0,0,0,8">
+                        <StackPanel>
+                            <TextBlock Text="� Need Help?"
+                                       FontSize="10"
+                                       FontWeight="Bold"
+                                       Foreground="#1565C0"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,0,0,3"/>
+                            <TextBlock Text="Contact your system administrator"
+                                       FontSize="9"
+                                       Foreground="#607D8B"
+                                       HorizontalAlignment="Center"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                    
+                    <!-- Version -->
+                    <TextBlock Text="Version 1.0.0 • Secure Authentication"
+                               FontSize="9"
+                               Foreground="#90A4AE"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

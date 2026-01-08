@@ -23,6 +23,8 @@ namespace BACTBiometricClient.Views
         private Student _currentStudent;
         private byte[] _capturedFingerprintImage;
         private byte[] _fingerprintTemplate;
+        private int _capturedImageWidth = 300;  // ✅ NEW: Store image dimensions
+        private int _capturedImageHeight = 400; // ✅ NEW: Store image dimensions
 
         private bool _isDeviceInitialized = false;
         private bool _hasExistingFingerprint = false;
@@ -599,6 +601,8 @@ namespace BACTBiometricClient.Views
 
                 _fingerprintTemplate = captureResult.Template;
                 _capturedFingerprintImage = captureResult.ImageData;
+                _capturedImageWidth = captureResult.ImageWidth;   // ✅ NEW: Store dimensions
+                _capturedImageHeight = captureResult.ImageHeight; // ✅ NEW: Store dimensions
 
                 if (captureResult.ImageData != null && captureResult.ImageData.Length > 0)
                 {
@@ -654,6 +658,8 @@ namespace BACTBiometricClient.Views
                 int width = 300;
                 int height = 400;
                 _capturedFingerprintImage = new byte[width * height];
+                _capturedImageWidth = width;   // ✅ NEW: Store dimensions
+                _capturedImageHeight = height; // ✅ NEW: Store dimensions
 
                 Random rand = new Random();
                 for (int i = 0; i < _capturedFingerprintImage.Length; i++)
@@ -721,6 +727,105 @@ namespace BACTBiometricClient.Views
 
         #region Save to Database
 
+        // ✅ NEW METHOD: Convert raw grayscale bytes to PNG format
+        /// <summary>
+        /// Convert raw fingerprint bytes to PNG format
+        /// </summary>
+        private byte[] ConvertToPng(byte[] rawImageData, int width, int height)
+        {
+            try
+            {
+                // ✅ Step 1: Invert colors (white background, dark ridges)
+                byte[] invertedData = new byte[rawImageData.Length];
+                for (int i = 0; i < invertedData.Length; i++)
+                {
+                    invertedData[i] = (byte)(255 - rawImageData[i]);
+                }
+
+                // ✅ Step 2: Find min and max for histogram stretching
+                byte minVal = 255;
+                byte maxVal = 0;
+
+                for (int i = 0; i < invertedData.Length; i++)
+                {
+                    if (invertedData[i] < minVal) minVal = invertedData[i];
+                    if (invertedData[i] > maxVal) maxVal = invertedData[i];
+                }
+
+                // ✅ Step 3: Apply STRONG contrast enhancement
+                byte[] enhancedData = new byte[invertedData.Length];
+                double range = maxVal - minVal;
+
+                if (range > 0)
+                {
+                    for (int i = 0; i < invertedData.Length; i++)
+                    {
+                        // Normalize to 0-1 range
+                        double normalized = (invertedData[i] - minVal) / range;
+
+                        // Apply STRONG gamma correction (0.5 = very high contrast)
+                        double enhanced = Math.Pow(normalized, 0.5);
+
+                        // Additional brightness adjustment - make dark pixels even darker
+                        if (enhanced < 0.5)
+                        {
+                            enhanced = enhanced * 0.8; // Make dark areas darker
+                        }
+                        else
+                        {
+                            enhanced = 0.5 + (enhanced - 0.5) * 1.2; // Keep bright areas bright
+                        }
+
+                        // Clamp to 0-1 range
+                        enhanced = Math.Max(0, Math.Min(1, enhanced));
+
+                        enhancedData[i] = (byte)(enhanced * 255);
+                    }
+                }
+                else
+                {
+                    Array.Copy(invertedData, enhancedData, invertedData.Length);
+                }
+
+                // ✅ Step 4: Create bitmap
+                WriteableBitmap bitmap = new WriteableBitmap(
+                    width,
+                    height,
+                    96,
+                    96,
+                    PixelFormats.Gray8,
+                    null
+                );
+
+                bitmap.WritePixels(
+                    new Int32Rect(0, 0, width, height),
+                    enhancedData,
+                    width,
+                    0
+                );
+
+                // ✅ Step 5: Encode to PNG
+                PngBitmapEncoder encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(bitmap));
+
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    encoder.Save(ms);
+                    byte[] pngData = ms.ToArray();
+
+                    System.Diagnostics.Debug.WriteLine($"✓ PNG Conversion (Strong Contrast):");
+                    System.Diagnostics.Debug.WriteLine($"  Original range: {minVal}-{maxVal}");
+                    System.Diagnostics.Debug.WriteLine($"  Output: {pngData.Length} bytes");
+
+                    return pngData;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"PNG conversion failed: {ex.Message}");
+                return rawImageData;
+            }
+        }
         private async void BtnSave_Click(object sender, RoutedEventArgs e)
         {
             if (_currentStudent == null || _fingerprintTemplate == null)
@@ -762,12 +867,23 @@ namespace BACTBiometricClient.Views
 
                 int quality = _fingerprintService.MinimumQualityScore;
 
+                // ✅ NEW: Convert raw bytes to PNG format before sending
+                byte[] pngImageData = null;
+                if (_capturedFingerprintImage != null && _capturedFingerprintImage.Length > 0)
+                {
+                    pngImageData = ConvertToPng(_capturedFingerprintImage, _capturedImageWidth, _capturedImageHeight);
+
+                    System.Diagnostics.Debug.WriteLine($"✓ Image conversion:");
+                    System.Diagnostics.Debug.WriteLine($"  Original (raw): {_capturedFingerprintImage.Length} bytes");
+                    System.Diagnostics.Debug.WriteLine($"  PNG format: {pngImageData.Length} bytes");
+                }
+
                 var data = new
                 {
                     student_id = _currentStudent.Id,
                     fingerprint_template = Convert.ToBase64String(_fingerprintTemplate),
-                    fingerprint_image = _capturedFingerprintImage != null
-                        ? Convert.ToBase64String(_capturedFingerprintImage)
+                    fingerprint_image = pngImageData != null
+                        ? Convert.ToBase64String(pngImageData) // ✅ NOW SENDING PNG!
                         : null,
                     quality = quality
                 };
@@ -780,7 +896,7 @@ namespace BACTBiometricClient.Views
                 System.Diagnostics.Debug.WriteLine($"Student ID: {_currentStudent.Id}");
                 System.Diagnostics.Debug.WriteLine($"Roll Number: {_currentStudent.RollNumber}");
                 System.Diagnostics.Debug.WriteLine($"Template Length: {_fingerprintTemplate.Length} bytes");
-                System.Diagnostics.Debug.WriteLine($"Image Length: {_capturedFingerprintImage?.Length ?? 0} bytes");
+                System.Diagnostics.Debug.WriteLine($"Image Length: {pngImageData?.Length ?? 0} bytes (PNG format)");
                 System.Diagnostics.Debug.WriteLine($"Quality: {quality}");
                 System.Diagnostics.Debug.WriteLine($"Auth Token: {(_authToken != null ? "Present" : "Missing")}");
 
@@ -821,7 +937,8 @@ namespace BACTBiometricClient.Views
                         $"Roll Number: {_currentStudent.RollNumber}\n" +
                         $"Name: {_currentStudent.Name}\n" +
                         $"Quality: {quality}%\n" +
-                        $"Mode: {mode}",
+                        $"Mode: {mode}\n" +
+                        $"Format: PNG ({pngImageData?.Length ?? 0} bytes)",
                         "Success",
                         MessageBoxButton.OK,
                         MessageBoxImage.Information

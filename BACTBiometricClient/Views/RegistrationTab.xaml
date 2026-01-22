@@ -238,7 +238,7 @@
                                     Content="🔍 Search Student"
                                     Style="{StaticResource PrimaryButton}"
                                     Height="48"
-                                    Width="160"
+                                    MinWidth="180"
                                     FontSize="15"
                                     Click="BtnSearch_Click"/>
                         </StackPanel>

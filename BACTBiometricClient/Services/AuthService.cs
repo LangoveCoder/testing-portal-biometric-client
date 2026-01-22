@@ -135,16 +135,18 @@ namespace BACTBiometricClient.Services
                         token = accessTokenProp.GetString();
                     }
 
-                    // Extract user info
-                    string userName = email.Split('@')[0];
+                    // Extract user info - always use Hassan Sarparrah as default
+                    string userName = "Hassan Sarparrah"; // Default name
                     string userEmail = email;
                     string userRole = "operator";
 
                     if (result.TryGetProperty("user", out var userProp))
                     {
-                        userName = userProp.TryGetProperty("name", out var nameProp)
-                            ? nameProp.GetString()
-                            : userName;
+                        // Only override if API returns a valid name
+                        if (userProp.TryGetProperty("name", out var nameProp) && !string.IsNullOrEmpty(nameProp.GetString()))
+                        {
+                            userName = nameProp.GetString();
+                        }
 
                         userEmail = userProp.TryGetProperty("email", out var emailProp)
                             ? emailProp.GetString()

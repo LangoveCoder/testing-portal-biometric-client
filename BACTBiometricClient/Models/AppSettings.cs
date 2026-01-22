@@ -23,6 +23,7 @@ namespace BACTBiometricClient.Models
         // User Preferences
         public string LastLoginEmail { get; set; }
         public bool RememberCredentials { get; set; }
+        public string OperatorName { get; set; }
 
         // Session Management
         public int InactivityTimeoutMinutes { get; set; }
@@ -39,6 +40,7 @@ namespace BACTBiometricClient.Models
             SyncIntervalMinutes = 5;
             LastLoginEmail = string.Empty;
             RememberCredentials = false;
+            OperatorName = "Hassan Sarparrah"; // Default operator name
             InactivityTimeoutMinutes = 30;
         }
 

@@ -196,38 +196,204 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- Search Input -->
+                    <!-- College Filter (for College Admins) -->
+                    <StackPanel x:Name="panelCollegeFilter" Visibility="Collapsed" Margin="0,0,0,20">
+                        <Border Background="#E8F5E9" 
+                                BorderBrush="#4CAF50"
+                                BorderThickness="2"
+                                CornerRadius="8"
+                                Padding="16,12">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🏫" FontSize="16" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                                <StackPanel>
+                                    <TextBlock Text="College Access Restriction"
+                                               FontSize="14"
+                                               FontWeight="Bold"
+                                               Foreground="#2E7D32"/>
+                                    <TextBlock x:Name="txtCollegeRestriction"
+                                               Text="You can only verify students from your assigned college"
+                                               FontSize="12"
+                                               Foreground="#388E3C"
+                                               Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Enhanced Search Input -->
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Grid.Column="0" Margin="0,0,16,0">
-                            <TextBlock Text="Roll Number" 
+                            <TextBlock Text="Search Student" 
                                        FontSize="13" 
                                        FontWeight="SemiBold"
                                        Foreground="#37474F" 
                                        Margin="0,0,0,8"/>
                             <TextBox x:Name="txtSearch" 
                                      Style="{StaticResource ModernTextBox}"
-                                     MaxLength="5"
                                      Height="48"
                                      FontSize="16"
-                                     ToolTip="Enter 5-digit roll number"
-                                     KeyDown="TxtSearch_KeyDown"/>
+                                     ToolTip="Search by roll number, name, father name, or CNIC"
+                                     KeyDown="TxtSearch_KeyDown"
+                                     TextChanged="TxtSearch_TextChanged"/>
                         </StackPanel>
 
-                        <StackPanel Grid.Column="1" VerticalAlignment="Bottom">
+                        <StackPanel Grid.Column="1" VerticalAlignment="Bottom" Margin="0,0,8,0">
                             <Button x:Name="btnLoadStudent"
-                                    Content="🔍 Load Student"
+                                    Content="🔍 Search"
                                     Style="{StaticResource PrimaryButton}"
                                     Click="BtnSearch_Click"
                                     Height="48"
-                                    Width="160"
+                                    MinWidth="120"
                                     FontSize="15"/>
                         </StackPanel>
+
+                        <StackPanel Grid.Column="2" VerticalAlignment="Bottom">
+                            <Button x:Name="btnClearSearch"
+                                    Content="Clear"
+                                    Background="#757575"
+                                    Foreground="White"
+                                    BorderThickness="0"
+                                    FontWeight="SemiBold"
+                                    FontSize="14"
+                                    Height="48"
+                                    MinWidth="80"
+                                    Click="BtnClearSearch_Click">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" 
+                                                CornerRadius="8" 
+                                                Padding="16,14">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#616161"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                        </StackPanel>
                     </Grid>
+
+                    <!-- Search Results Summary -->
+                    <StackPanel x:Name="panelSearchSummary" Orientation="Horizontal" Margin="0,16,0,8" Visibility="Collapsed">
+                        <TextBlock x:Name="txtSearchSummary" FontSize="13" FontWeight="SemiBold" Foreground="#2E7D32"/>
+                        <TextBlock x:Name="txtSearchTime" FontSize="12" Foreground="#757575" Margin="8,0,0,0"/>
+                    </StackPanel>
+
+                    <!-- Enhanced Search Results -->
+                    <Border x:Name="panelSearchResults" 
+                            Background="#FAFAFA" 
+                            BorderBrush="#E0E0E0" 
+                            BorderThickness="1" 
+                            CornerRadius="8" 
+                            Margin="0,0,0,16"
+                            MaxHeight="300"
+                            Visibility="Collapsed">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8">
+                            <ListBox x:Name="lstSearchResults" 
+                                     Background="Transparent" 
+                                     BorderThickness="0"
+                                     SelectionChanged="LstSearchResults_SelectionChanged">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="White" 
+                                                Margin="4" 
+                                                Padding="12" 
+                                                CornerRadius="6"
+                                                BorderBrush="#E0E0E0" 
+                                                BorderThickness="1"
+                                                Cursor="Hand">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Style.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="#F5F5F5"/>
+                                                            <Setter Property="BorderBrush" Value="#2E7D32"/>
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                
+                                                <!-- Student Photo Thumbnail -->
+                                                <Border Grid.Column="0" 
+                                                        Width="40" 
+                                                        Height="40" 
+                                                        CornerRadius="4"
+                                                        BorderBrush="#BDBDBD" 
+                                                        BorderThickness="1"
+                                                        Background="#F5F5F5">
+                                                    <TextBlock Text="👤" 
+                                                               FontSize="20" 
+                                                               Foreground="#BDBDBD"
+                                                               HorizontalAlignment="Center" 
+                                                               VerticalAlignment="Center"/>
+                                                </Border>
+                                                
+                                                <!-- Student Information -->
+                                                <StackPanel Grid.Column="1" 
+                                                            Margin="12,0,0,0" 
+                                                            VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Student.RollNumber}" 
+                                                               FontWeight="Bold" 
+                                                               FontSize="14" 
+                                                               Foreground="#2E7D32"/>
+                                                    <TextBlock Text="{Binding Student.Name}" 
+                                                               FontSize="13" 
+                                                               Foreground="#333333"
+                                                               Margin="0,2,0,0"/>
+                                                    <TextBlock Text="{Binding Student.FatherName}" 
+                                                               FontSize="12" 
+                                                               Foreground="#666666"
+                                                               Margin="0,1,0,0"/>
+                                                    <TextBlock Text="{Binding Student.CollegeName}" 
+                                                               FontSize="11" 
+                                                               Foreground="#999999"
+                                                               Margin="0,1,0,0"/>
+                                                </StackPanel>
+                                                
+                                                <!-- Verification Status -->
+                                                <StackPanel Grid.Column="2" 
+                                                            VerticalAlignment="Center" 
+                                                            HorizontalAlignment="Right">
+                                                    <Border CornerRadius="12" 
+                                                            Padding="8,4" 
+                                                            Background="{Binding StatusColor}">
+                                                        <TextBlock Text="{Binding FingerprintStatus}" 
+                                                                   FontSize="10" 
+                                                                   FontWeight="Bold" 
+                                                                   Foreground="White"/>
+                                                    </Border>
+                                                    <TextBlock Text="{Binding VerificationHistory}" 
+                                                               FontSize="9" 
+                                                               Foreground="#757575"
+                                                               HorizontalAlignment="Center"
+                                                               Margin="0,2,0,0"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </ScrollViewer>
+                    </Border>
 
                     <!-- Success Feedback -->
                     <Border x:Name="panelLoadSuccess"

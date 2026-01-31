@@ -10,6 +10,7 @@ namespace BACTBiometricClient
         private readonly AuthService _authService;
         private readonly DatabaseService _database;
         private readonly ApiService _apiService;
+        private readonly RoleBasedUIService _roleBasedUI;
 
         public MainWindow(AuthService authService, DatabaseService database, ApiService apiService)
         {
@@ -18,6 +19,7 @@ namespace BACTBiometricClient
             _authService = authService;
             _database = database;
             _apiService = apiService;
+            _roleBasedUI = new RoleBasedUIService(_database);
 
             Logger.Info("Main window opened");
 
@@ -37,6 +39,9 @@ namespace BACTBiometricClient
                 return;
             }
 
+            // Set user for role-based UI service
+            _roleBasedUI.SetCurrentUser(user);
+
             // Update header with user info
             txtUserName.Text = user.Name;
             txtUserRole.Text = user.Role.ToUpper();
@@ -46,59 +51,52 @@ namespace BACTBiometricClient
 
             Logger.Info($"Loading UI for: {user.Name} ({user.Role})");
 
-            // Show/hide tabs based on role
+            // Configure tabs based on role using RoleBasedUIService
+            _roleBasedUI.ConfigureUIForRole(mainTabControl, tabRegistration, tabVerification);
+
+            // Load appropriate tab content based on role
             if (user.IsOperator)
             {
-                // Operator: Show Registration tab only
-                tabRegistration.Visibility = Visibility.Visible;
-                tabVerification.Visibility = Visibility.Collapsed;
-                mainTabControl.SelectedItem = tabRegistration;
-
-                // Load Registration Tab UserControl
+                // Load Registration Tab for Operators
                 var registrationTab = new RegistrationTab();
-
-                // Pass auth token to registration tab
                 registrationTab.SetAuthToken(authToken, user.Name, user.Role);
-
+                
+                // Pass role-based UI service for college selection
+                registrationTab.SetRoleBasedUIService(_roleBasedUI);
+                
                 tabRegistration.Content = registrationTab;
-
-                Logger.Info("Loaded Registration Tab for Operator");
+                Logger.Info("Loaded Registration Tab for Operator with college selection");
             }
             else if (user.IsCollegeAdmin)
             {
-                // College Admin: Show Verification tab only
-                tabRegistration.Visibility = Visibility.Collapsed;
-                tabVerification.Visibility = Visibility.Visible;
-                mainTabControl.SelectedItem = tabVerification;
-
-                // Load Verification Tab UserControl
+                // Load Verification Tab for College Admins
                 var verificationTab = new VerificationTab();
-
-                // Pass auth token to verification tab
                 verificationTab.SetAuthToken(authToken, user.Name, user.Role);
-
+                
+                // Pass role-based UI service for college filtering
+                verificationTab.SetRoleBasedUIService(_roleBasedUI);
+                
                 tabVerification.Content = verificationTab;
-
-                Logger.Info("Loaded Verification Tab for College Admin");
+                Logger.Info("Loaded Verification Tab for College Admin with college restrictions");
             }
             else
             {
-                // Unknown role or SuperAdmin: Show both tabs
-                tabRegistration.Visibility = Visibility.Visible;
-                tabVerification.Visibility = Visibility.Visible;
-
-                // Load Registration Tab
+                // Unknown role or SuperAdmin: Load both tabs
                 var registrationTab = new RegistrationTab();
                 registrationTab.SetAuthToken(authToken, user.Name, user.Role);
+                registrationTab.SetRoleBasedUIService(_roleBasedUI);
                 tabRegistration.Content = registrationTab;
 
-                // Load Verification Tab
                 var verificationTab = new VerificationTab();
                 verificationTab.SetAuthToken(authToken, user.Name, user.Role);
+                verificationTab.SetRoleBasedUIService(_roleBasedUI);
                 tabVerification.Content = verificationTab;
 
                 Logger.Info("Loaded both tabs for user with role: " + user.Role);
             }
+
+            // Update status message with role-specific welcome
+            txtStatusMessage.Text = _roleBasedUI.GetWelcomeMessage();
         }
 
         private async void UpdateConnectionStatus()
@@ -129,7 +127,7 @@ namespace BACTBiometricClient
         {
             try
             {
-                var (registrations, verifications) = _database.GetPendingCounts();
+                var (registrations, verifications, totalOperations) = _database.GetPendingCounts();
                 int total = registrations + verifications;
 
                 txtPendingCount.Text = total == 0 ? "✓ SYNCED" : $"{total} PENDING";
@@ -146,6 +144,21 @@ namespace BACTBiometricClient
             catch (System.Exception ex)
             {
                 Logger.Error("Failed to get pending counts", ex);
+            }
+        }
+
+        private void BtnApiTest_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var apiTestWindow = new ApiTestWindow();
+                apiTestWindow.Show();
+                Logger.Info("API Test Console opened");
+            }
+            catch (System.Exception ex)
+            {
+                Logger.Error("Failed to open API Test Console", ex);
+                MessageBox.Show("Failed to open API Test Console: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

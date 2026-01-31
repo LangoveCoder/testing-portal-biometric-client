@@ -1,0 +1,156 @@
+<Window x:Class="BACTBiometricClient.Views.TestsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Available Tests - BACT Biometric Client"
+        Height="700" Width="1200"
+        MinHeight="600" MinWidth="1000"
+        WindowStartupLocation="CenterScreen"
+        Background="#F5F5F5">
+
+    <Window.Resources>
+        <!-- Modern Card Style -->
+        <Style x:Key="TestCard" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E0E0E0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Margin" Value="10"/>
+            <Setter Property="Padding" Value="20"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#000000" BlurRadius="10" ShadowDepth="2" Opacity="0.1"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Header Style -->
+        <Style x:Key="HeaderText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#1565C0"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+
+        <!-- Info Text Style -->
+        <Style x:Key="InfoText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#666666"/>
+            <Setter Property="Margin" Value="0,2"/>
+        </Style>
+
+        <!-- Status Badge Style -->
+        <Style x:Key="StatusBadge" TargetType="Border">
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Margin" Value="5,0"/>
+        </Style>
+
+        <!-- Action Button Style -->
+        <Style x:Key="ActionButton" TargetType="Button">
+            <Setter Property="Background" Value="#1565C0"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="5,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#0D47A1"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#BDBDBD"/>
+                    <Setter Property="Cursor" Value="Arrow"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="White" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
+            <Grid Margin="30,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="📋 Available Tests" FontSize="24" FontWeight="Bold" Foreground="#1565C0"/>
+                    <TextBlock Text="Tests assigned to your operator account" FontSize="14" Foreground="#666666" Margin="0,5,0,0"/>
+                </StackPanel>
+                
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="btnRefresh" Content="🔄 Refresh" Style="{StaticResource ActionButton}" Click="BtnRefresh_Click"/>
+                    <Button x:Name="btnClose" Content="✕ Close" Style="{StaticResource ActionButton}" Background="#757575" Click="BtnClose_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Filter Section -->
+        <Border Grid.Row="1" Background="White" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
+            <StackPanel Margin="30,15" Orientation="Horizontal">
+                <TextBlock Text="Filter by College:" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="SemiBold"/>
+                <ComboBox x:Name="cmbCollegeFilter" Width="200" Height="30" SelectionChanged="CmbCollegeFilter_SelectionChanged">
+                    <ComboBoxItem Content="All Colleges" IsSelected="True"/>
+                </ComboBox>
+                <TextBlock x:Name="txtTestCount" Text="Loading tests..." Margin="20,0,0,0" VerticalAlignment="Center" FontStyle="Italic" Foreground="#666666"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Tests List -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Margin="20,10">
+            <StackPanel x:Name="testsPanel">
+                <!-- Loading indicator -->
+                <Border x:Name="loadingPanel" Style="{StaticResource TestCard}" HorizontalAlignment="Center" Visibility="Visible">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="⏳" FontSize="16" Margin="0,0,10,0"/>
+                        <TextBlock Text="Loading available tests..." FontSize="14" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+                
+                <!-- No tests message -->
+                <Border x:Name="noTestsPanel" Style="{StaticResource TestCard}" HorizontalAlignment="Center" Visibility="Collapsed">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="📋" FontSize="48" HorizontalAlignment="Center" Foreground="#BDBDBD"/>
+                        <TextBlock Text="No tests available" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,5"/>
+                        <TextBlock Text="There are no tests assigned to your operator account at this time." 
+                                   FontSize="12" Foreground="#666666" HorizontalAlignment="Center" TextWrapping="Wrap" MaxWidth="300"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="3" Background="#F0F0F0" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
+            <Grid Margin="30,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <TextBlock x:Name="txtStatus" Grid.Column="0" Text="Ready" FontSize="12" VerticalAlignment="Center"/>
+                <TextBlock x:Name="txtLastUpdated" Grid.Column="1" Text="" FontSize="12" VerticalAlignment="Center" Foreground="#666666"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

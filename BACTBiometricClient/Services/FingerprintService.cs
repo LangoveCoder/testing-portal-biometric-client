@@ -173,5 +173,10 @@ namespace BACTBiometricClient.Services
                 // Don't set _currentScanner = null to allow reuse
             }
         }
+
+        public void Dispose()
+        {
+            DisconnectAsync().GetAwaiter().GetResult();
+        }
     }
 }

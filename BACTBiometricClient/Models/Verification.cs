@@ -12,7 +12,7 @@ namespace BACTBiometricClient.Models
         public int Id { get; set; }
 
         // Student identifiers
-        public int StudentId { get; set; }
+        public int? StudentId { get; set; }
         public string RollNumber { get; set; }
 
         // Verification result

@@ -222,6 +222,60 @@ SELECT
 FROM cached_students s;
 
 -- ==========================================
+-- TABLE 9: colleges
+-- Cached college information for offline access
+-- ==========================================
+CREATE TABLE IF NOT EXISTS colleges (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    district TEXT,
+    address TEXT,
+    contact_number TEXT,
+    email TEXT,
+    is_active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT,
+    sync_status TEXT DEFAULT 'cached'
+);
+
+CREATE INDEX idx_colleges_active ON colleges(is_active);
+CREATE INDEX idx_colleges_district ON colleges(district);
+
+-- ==========================================
+-- TABLE 10: cache_metadata
+-- Tracks cache freshness and statistics
+-- ==========================================
+CREATE TABLE IF NOT EXISTS cache_metadata (
+    cache_type TEXT PRIMARY KEY,
+    record_count INTEGER DEFAULT 0,
+    last_updated TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==========================================
+-- TABLE 11: queued_operations
+-- Enhanced queue management for offline operations
+-- ==========================================
+CREATE TABLE IF NOT EXISTS queued_operations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    operation_type TEXT NOT NULL,
+    operation_data TEXT NOT NULL,
+    priority INTEGER DEFAULT 5,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    scheduled_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    sync_attempts INTEGER DEFAULT 0,
+    max_attempts INTEGER DEFAULT 3,
+    last_error TEXT,
+    sync_status TEXT DEFAULT 'pending',
+    last_sync_attempt TEXT,
+    synced_at TEXT
+);
+
+CREATE INDEX idx_queued_ops_status ON queued_operations(sync_status);
+CREATE INDEX idx_queued_ops_priority ON queued_operations(priority);
+CREATE INDEX idx_queued_ops_scheduled ON queued_operations(scheduled_at);
+
+-- ==========================================
 -- Database version tracking
 -- ==========================================
 CREATE TABLE IF NOT EXISTS db_version (

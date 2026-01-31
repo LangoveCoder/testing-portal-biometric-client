@@ -21,10 +21,12 @@ namespace BACTBiometricClient.Models
         // Assignment information
         public List<int> AssignedTestIds { get; set; }
         public List<string> AssignedTestNames { get; set; }
+        public int? AssignedCollegeId { get; set; }
 
         // Session tracking
         public DateTime LoggedInAt { get; set; }
         public DateTime LastActivityAt { get; set; }
+        public DateTime? LastLoginAt { get; set; }
         public bool IsActive { get; set; }
 
         // Computed properties

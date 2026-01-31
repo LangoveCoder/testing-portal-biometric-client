@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using BACTBiometricClient.Services;
 using BACTBiometricClient.Helpers;
+using Newtonsoft.Json;
 
 namespace BACTBiometricClient.Views
 {
@@ -32,7 +33,7 @@ namespace BACTBiometricClient.Views
             _httpClient = new HttpClient();
 
             // Initialize API Service with base URL
-            _apiUrl = "http://localhost:8000/api"; // Laravel API URL
+            _apiUrl = "http://192.168.100.89:8000/api/v1"; // Updated to working API URL
             _apiService = new ApiService(_apiUrl);
 
             _authService = new AuthService(_database);
@@ -40,6 +41,9 @@ namespace BACTBiometricClient.Views
             LoadSettings();
             CheckConnectionStatus();
 
+            // Clear email field for actual credentials
+            txtEmail.Text = "";
+            
             Logger.Info("Login window opened");
         }
 
@@ -95,199 +99,239 @@ namespace BACTBiometricClient.Views
 
         private async void BtnLogin_Click(object sender, RoutedEventArgs e)
         {
-            await LoginAsync();
+            try
+            {
+                Logger.Debug("Login button clicked");
+                await LoginAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Error in BtnLogin_Click: " + ex.Message);
+                MessageBox.Show($"Error in login button click: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
         private async Task LoginAsync()
         {
-            string email = txtEmail.Text.Trim();
-            string password = GetCurrentPassword();
-
-            if (string.IsNullOrWhiteSpace(email))
-            {
-                ShowError("Please enter your email");
-                txtEmail.Focus();
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                ShowError("Please enter your password");
-                FocusPasswordField();
-                return;
-            }
-
-            SetLoading(true);
-            HideError();
-
             try
             {
+                Logger.Debug("LoginAsync started");
+                
+                string email = txtEmail.Text.Trim();
+                string password = GetCurrentPassword();
+
+                Logger.Debug($"Email: '{email}', Password length: {password?.Length ?? 0}");
+
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    ShowError("Please enter your email");
+                    txtEmail.Focus();
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(password))
+                {
+                    ShowError("Please enter your password");
+                    FocusPasswordField();
+                    return;
+                }
+
+                SetLoading(true);
+                HideError();
+
                 Logger.Info($"Attempting login for: {email}");
 
-                // Try all possible login endpoints
-                var endpoints = new[]
+                // Try Laravel API login using the working implementation from ApiTestWindow
+                try
                 {
-            new { Path = "biometric-operator/login", Role = "operator" },
-            new { Path = "college/login", Role = "college" }
-        };
-
-                foreach (var endpoint in endpoints)
-                {
-                    var loginEndpoint = $"{_apiUrl}/{endpoint.Path}";
-
-                    System.Diagnostics.Debug.WriteLine($"=== TRYING {endpoint.Role.ToUpper()} LOGIN ===");
-                    System.Diagnostics.Debug.WriteLine($"API URL: {loginEndpoint}");
-                    System.Diagnostics.Debug.WriteLine($"Email: {email}");
-
-                    // Prepare login request
                     var loginData = new
                     {
                         email = email,
-                        password = password
+                        password = password,
+                        device_info = "Windows 10 Pro - BACT Biometric Client v1.0"
                     };
 
-                    var json = JsonSerializer.Serialize(loginData);
+                    var json = System.Text.Json.JsonSerializer.Serialize(loginData);
                     var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                     // Set headers
                     _httpClient.DefaultRequestHeaders.Clear();
                     _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
 
-                    try
+                    var loginEndpoint = $"{_apiUrl}/auth/login";
+                    Logger.Info($"Calling API: {loginEndpoint}");
+
+                    var response = await _httpClient.PostAsync(loginEndpoint, content);
+                    var responseText = await response.Content.ReadAsStringAsync();
+
+                    Logger.Debug($"API Response Status: {response.StatusCode}");
+                    Logger.Debug($"API Response: {responseText.Substring(0, Math.Min(200, responseText.Length))}...");
+
+                    if (response.IsSuccessStatusCode)
                     {
-                        // Call Laravel API
-                        var response = await _httpClient.PostAsync(loginEndpoint, content);
-                        var responseJson = await response.Content.ReadAsStringAsync();
-
-                        System.Diagnostics.Debug.WriteLine($"Status: {response.StatusCode}");
-                        System.Diagnostics.Debug.WriteLine($"Response: {responseJson.Substring(0, Math.Min(200, responseJson.Length))}...");
-
-                        if (response.IsSuccessStatusCode)
+                        // Parse response using Newtonsoft.Json like the working ApiTestWindow
+                        var formattedJson = Newtonsoft.Json.JsonConvert.DeserializeObject(responseText);
+                        
+                        // Extract token using the same logic as ApiTestWindow
+                        string extractedToken = null;
+                        
+                        try
                         {
-                            var result = JsonSerializer.Deserialize<JsonElement>(responseJson);
-
-                            // Extract token
-                            string token = null;
-                            if (result.TryGetProperty("token", out var tokenProp))
+                            var loginResponse = formattedJson as Newtonsoft.Json.Linq.JObject;
+                            if (loginResponse != null)
                             {
-                                token = tokenProp.GetString();
-                            }
-                            else if (result.TryGetProperty("access_token", out var accessTokenProp))
-                            {
-                                token = accessTokenProp.GetString();
-                            }
-                            else if (result.TryGetProperty("data", out var dataProp)
-                                     && dataProp.TryGetProperty("token", out var dataTokenProp))
-                            {
-                                token = dataTokenProp.GetString();
-                            }
-
-                            // Extract user info - always use Hassan Sarparrah as default
-                            string userName = "Hassan Sarparrah"; // Default name
-                            string userEmail = email;
-                            string userRole = endpoint.Role;
-
-                            // Try to get user info from different possible response structures
-                            if (result.TryGetProperty("user", out var userProp))
-                            {
-                                // Only override if API returns a valid name
-                                if (userProp.TryGetProperty("name", out var nameProp) && !string.IsNullOrEmpty(nameProp.GetString()))
+                                // Try data.token first
+                                extractedToken = loginResponse["data"]?["token"]?.ToString();
+                                
+                                // If not found, try token directly
+                                if (string.IsNullOrEmpty(extractedToken))
                                 {
-                                    userName = nameProp.GetString();
+                                    extractedToken = loginResponse["token"]?.ToString();
+                                }
+                                
+                                // If still not found, try access_token
+                                if (string.IsNullOrEmpty(extractedToken))
+                                {
+                                    extractedToken = loginResponse["access_token"]?.ToString();
                                 }
 
-                                userEmail = userProp.TryGetProperty("email", out var emailProp) && !string.IsNullOrEmpty(emailProp.GetString())
-                                    ? emailProp.GetString()
-                                    : userEmail;
-
-                                userRole = userProp.TryGetProperty("role", out var roleProp) && !string.IsNullOrEmpty(roleProp.GetString())
-                                    ? roleProp.GetString()
-                                    : endpoint.Role;
-                            }
-                            else if (result.TryGetProperty("data", out var dataProp) && dataProp.TryGetProperty("user", out var dataUserProp))
-                            {
-                                // Only override if API returns a valid name
-                                if (dataUserProp.TryGetProperty("name", out var nameProp) && !string.IsNullOrEmpty(nameProp.GetString()))
+                                // Extract user info
+                                string userName = "Hassan Sarparrah"; // Default
+                                string userRole = "operator"; // Default
+                                
+                                // Try to get user info from response
+                                var userInfo = loginResponse["data"]?["user"] ?? loginResponse["user"];
+                                if (userInfo != null)
                                 {
-                                    userName = nameProp.GetString();
+                                    var nameFromApi = userInfo["name"]?.ToString();
+                                    if (!string.IsNullOrEmpty(nameFromApi))
+                                    {
+                                        userName = nameFromApi;
+                                    }
+                                    
+                                    var roleFromApi = userInfo["role"]?.ToString();
+                                    if (!string.IsNullOrEmpty(roleFromApi))
+                                    {
+                                        userRole = roleFromApi;
+                                    }
                                 }
 
-                                userEmail = dataUserProp.TryGetProperty("email", out var emailProp) && !string.IsNullOrEmpty(emailProp.GetString())
-                                    ? emailProp.GetString()
-                                    : userEmail;
+                                if (!string.IsNullOrEmpty(extractedToken))
+                                {
+                                    AuthToken = extractedToken;
+                                    LoginSuccessful = true;
+                                    UserName = userName;
+                                    UserEmail = email;
+                                    UserRole = userRole;
 
-                                userRole = dataUserProp.TryGetProperty("role", out var roleProp) && !string.IsNullOrEmpty(roleProp.GetString())
-                                    ? roleProp.GetString()
-                                    : endpoint.Role;
-                            }
+                                    // Save credentials if remember me is checked
+                                    try
+                                    {
+                                        var settings = _database.GetAppSettings();
+                                        settings.RememberCredentials = chkRememberMe.IsChecked == true;
+                                        settings.LastLoginEmail = email;
+                                        _database.SaveAppSettings(settings);
+                                        Logger.Info($"✓ Settings saved successfully");
+                                    }
+                                    catch (Exception settingsEx)
+                                    {
+                                        Logger.Error("Could not save settings", settingsEx);
+                                        // Continue anyway - login was successful, just couldn't save settings
+                                    }
 
-                            if (!string.IsNullOrEmpty(token))
-                            {
-                                AuthToken = token;
-                                LoginSuccessful = true;
-                                UserName = userName;
-                                UserEmail = userEmail;
-                                UserRole = userRole;
+                                    // Save to AuthService
+                                    try
+                                    {
+                                        await _authService.SaveAuthTokenAsync(extractedToken, UserName, UserEmail, UserRole);
+                                        Logger.Info($"✓ Auth token saved successfully");
+                                    }
+                                    catch (Exception authEx)
+                                    {
+                                        Logger.Error("Failed to save auth token to database", authEx);
+                                        // Continue anyway - login was successful, just couldn't save to local DB
+                                    }
 
-                                // Save credentials if remember me is checked
-                                var settings = _database.GetAppSettings();
-                                settings.RememberCredentials = chkRememberMe.IsChecked == true;
-                                settings.LastLoginEmail = email;
-                                _database.SaveAppSettings(settings);
-
-                                // Save to AuthService
-                                await _authService.SaveAuthTokenAsync(token, UserName, UserEmail, UserRole);
-
-                                Logger.Info($"✓ Login successful: {UserName} ({UserRole})");
-                                System.Diagnostics.Debug.WriteLine($"✓ Authenticated as {userRole.ToUpper()}: {UserName}");
-
-                                // Open MainWindow
-                                var mainWindow = new MainWindow(_authService, _database, _apiService);
-                                mainWindow.Show();
-                                this.Close();
-                                return; // Success - stop trying other endpoints
+                                    // Show success message and open Tests window
+                                    Logger.Info($"✓ API login successful: {UserName} ({UserRole})");
+                                    
+                                    try
+                                    {
+                                        // Open the actual TestsWindow with authentication token
+                                        var testsWindow = new TestsWindow(extractedToken, _apiUrl);
+                                        testsWindow.Show();
+                                        
+                                        // Hide the login window
+                                        this.Hide();
+                                        
+                                        // Set up event handler to close login window when test window closes
+                                        testsWindow.Closed += (s, args) => {
+                                            Application.Current.Shutdown();
+                                        };
+                                    }
+                                    catch (Exception testsEx)
+                                    {
+                                        MessageBox.Show($"Login successful but failed to open tests window:\n\n{testsEx.Message}", 
+                                            "Navigation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                    }
+                                    
+                                    return;
+                                }
+                                else
+                                {
+                                    Logger.Warning("Login successful but no token found in response");
+                                    ShowError("Login successful but authentication token not received. Please try again.");
+                                    return;
+                                }
                             }
                         }
-                        else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                        catch (Exception tokenEx)
                         {
-                            // Wrong endpoint or wrong credentials - try next endpoint
-                            System.Diagnostics.Debug.WriteLine($"✗ {endpoint.Role.ToUpper()} endpoint: Unauthorized");
-                            continue;
+                            Logger.Error("Token extraction error", tokenEx);
+                            Logger.Debug($"Response that failed to parse: {responseText}");
+                            ShowError($"Login response parsing error. Please try again.\n\nAPI Response: {responseText.Substring(0, Math.Min(100, responseText.Length))}...");
+                            return;
                         }
-                        else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                    }
+                    else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                    {
+                        ShowError("Invalid email or password.");
+                        Logger.Warning("Login failed: Invalid credentials");
+                        return;
+                    }
+                    else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                    {
+                        // Try to get error message from response
+                        try
                         {
-                            // Account exists but is inactive/forbidden
-                            var result = JsonSerializer.Deserialize<JsonElement>(responseJson);
-                            string errorMessage = result.TryGetProperty("message", out var msg)
+                            var errorResponse = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(responseText);
+                            string errorMessage = errorResponse.TryGetProperty("message", out var msg)
                                 ? msg.GetString()
                                 : "Account is deactivated";
-
                             ShowError(errorMessage);
-                            Logger.Warning($"Login failed: {errorMessage}");
-                            return; // Don't try other endpoints - account is disabled
                         }
-                        else
+                        catch
                         {
-                            // Other error - try next endpoint
-                            System.Diagnostics.Debug.WriteLine($"✗ {endpoint.Role.ToUpper()} endpoint: {response.StatusCode}");
-                            continue;
+                            ShowError("Account access is restricted. Please contact administrator.");
                         }
+                        Logger.Warning("Login failed: Account forbidden");
+                        return;
                     }
-                    catch (HttpRequestException)
+                    else
                     {
-                        // Connection error - continue to next endpoint
-                        continue;
+                        ShowError($"Server error ({response.StatusCode}). Please try again later.");
+                        Logger.Error($"Login failed with status: {response.StatusCode}");
+                        return;
                     }
                 }
-
-                // If we get here, all endpoints failed
-                ShowError("Invalid email or password");
-                Logger.Warning("Login failed: Invalid credentials on all endpoints");
-                System.Diagnostics.Debug.WriteLine("✗ All login endpoints failed");
-            }
-            catch (HttpRequestException httpEx)
-            {
-                ShowError("Cannot connect to server.\n\nPlease ensure Laravel server is running:\nphp artisan serve");
-                Logger.Error("Login HTTP error", httpEx);
+                catch (HttpRequestException httpEx)
+                {
+                    ShowError("Cannot connect to server. Please check your internet connection and try again.");
+                    Logger.Error("Login HTTP error", httpEx);
+                }
+                catch (TaskCanceledException)
+                {
+                    ShowError("Login request timed out. Please try again.");
+                    Logger.Error("Login request timed out");
+                }
             }
             catch (Exception ex)
             {
@@ -302,12 +346,12 @@ namespace BACTBiometricClient.Views
         private void ShowError(string message)
         {
             txtStatus.Text = message;
-            txtStatus.Visibility = Visibility.Visible;
+            borderStatus.Visibility = Visibility.Visible;
         }
 
         private void HideError()
         {
-            txtStatus.Visibility = Visibility.Collapsed;
+            borderStatus.Visibility = Visibility.Collapsed;
         }
 
         private void SetLoading(bool isLoading)
@@ -322,11 +366,28 @@ namespace BACTBiometricClient.Views
 
             if (isLoading)
             {
-                btnLogin.Content = "SIGNING IN...";
+                btnLogin.Content = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Children =
+                    {
+                        new TextBlock { Text = "SIGNING IN...", Margin = new Thickness(0,0,8,0) }
+                    }
+                };
             }
             else
             {
-                btnLogin.Content = "SIGN IN";
+                btnLogin.Content = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Children =
+                    {
+                        new TextBlock { Text = "SIGN IN", Margin = new Thickness(0,0,8,0) },
+                        new TextBlock { Text = "→", FontSize = 16 }
+                    }
+                };
             }
         }
 

@@ -1,0 +1,200 @@
+<Window x:Class="BACTBiometricClient.Views.ApiTestWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="API Test Console - Authenticated Session" Height="900" Width="1400"
+        WindowStartupLocation="CenterScreen">
+    
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="300"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+            <TextBlock Text="🧪 API Test Console - Authenticated Session" FontSize="24" FontWeight="Bold" VerticalAlignment="Center"/>
+            <TextBox x:Name="ApiBaseUrlInput" Text="http://192.168.100.89:8000/api/v1" 
+                    Width="300" Margin="20,0,10,0" VerticalAlignment="Center"/>
+            <Button x:Name="UpdateUrlBtn" Content="Update URL" Click="UpdateUrl_Click" 
+                   Height="25" Width="80" VerticalAlignment="Center"/>
+            <TextBlock x:Name="TokenStatus" Text="❌ No Token" Margin="20,0,0,0" 
+                      VerticalAlignment="Center" Foreground="Red" FontWeight="Bold"/>
+        </StackPanel>
+        
+        <!-- Main Content Area with Tiles -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <UniformGrid Columns="3" Margin="0,0,0,10">
+                
+
+                
+                <!-- Operator APIs Tile -->
+                <Border Background="LightGreen" BorderBrush="DarkGreen" BorderThickness="2" 
+                       Margin="5" CornerRadius="10">
+                    <StackPanel Margin="15">
+                        <TextBlock Text="👤 Operator APIs" FontSize="16" FontWeight="Bold" 
+                                  HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        
+                        <!-- Get Tests -->
+                        <GroupBox Header="Get Tests" Margin="0,0,0,5">
+                            <StackPanel Margin="5">
+                                <TextBox x:Name="CollegeIdInput" ToolTip="College ID (optional)" Margin="0,0,0,5"/>
+                                <Button x:Name="GetTestsBtn" Content="📋 Get Available Tests" 
+                                       Click="GetTests_Click" Height="25"/>
+                            </StackPanel>
+                        </GroupBox>
+                        
+                        <!-- Search Student -->
+                        <GroupBox Header="Search Student" Margin="0,0,0,5">
+                            <Grid Margin="5">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Roll No:" VerticalAlignment="Center"/>
+                                <TextBox x:Name="RollNumberInput" Grid.Row="0" Grid.Column="1" 
+                                        Text="00001" Margin="5,2"/>
+                                
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Test ID:" VerticalAlignment="Center"/>
+                                <TextBox x:Name="TestIdInput" Grid.Row="1" Grid.Column="1" 
+                                        Text="1" Margin="5,2"/>
+                                
+                                <Button x:Name="SearchStudentBtn" Grid.Row="2" Grid.Column="1" 
+                                       Content="🔍 Search Student" Click="SearchStudent_Click" 
+                                       Height="25" Margin="5,5,5,0"/>
+                            </Grid>
+                        </GroupBox>
+                        
+                        <!-- Quick Actions -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button x:Name="GetCollegesBtn" Content="🏛️ Colleges" Click="GetColleges_Click" 
+                                   Width="80" Height="25" Margin="2"/>
+                            <Button x:Name="SaveFingerprintBtn" Content="💾 Save FP" Click="SaveFingerprint_Click" 
+                                   Width="80" Height="25" Margin="2"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Admin APIs Tile -->
+                <Border Background="LightCoral" BorderBrush="DarkRed" BorderThickness="2" 
+                       Margin="5" CornerRadius="10">
+                    <StackPanel Margin="15">
+                        <TextBlock Text="🏛️ Admin APIs" FontSize="16" FontWeight="Bold" 
+                                  HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        
+                        <!-- Load Student for Verification -->
+                        <GroupBox Header="Load Student" Margin="0,0,0,5">
+                            <StackPanel Margin="5">
+                                <TextBox x:Name="LoadRollNumberInput" ToolTip="Roll Number" 
+                                        Text="00001" Margin="0,0,0,5"/>
+                                <Button x:Name="LoadStudentBtn" Content="📋 Load for Verification" 
+                                       Click="LoadStudent_Click" Height="25"/>
+                            </StackPanel>
+                        </GroupBox>
+                        
+                        <!-- Save Verification -->
+                        <GroupBox Header="Save Verification" Margin="0,0,0,5">
+                            <Grid Margin="5">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Roll No:" VerticalAlignment="Center"/>
+                                <TextBox x:Name="VerifyRollNumberInput" Grid.Row="0" Grid.Column="1" 
+                                        Text="00001" Margin="5,2"/>
+                                
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Result:" VerticalAlignment="Center"/>
+                                <ComboBox x:Name="MatchResultComboBox" Grid.Row="1" Grid.Column="1" 
+                                         Margin="5,2">
+                                    <ComboBoxItem Content="match" IsSelected="True"/>
+                                    <ComboBoxItem Content="no_match"/>
+                                </ComboBox>
+                                
+                                <Button x:Name="SaveVerificationBtn" Grid.Row="2" Grid.Column="1" 
+                                       Content="✅ Save Verification" Click="SaveVerification_Click" 
+                                       Height="25" Margin="5,5,5,0"/>
+                            </Grid>
+                        </GroupBox>
+                        
+                        <!-- Quick Actions -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button x:Name="GetStudentsBtn" Content="👥 Students" Click="GetStudents_Click" 
+                                   Width="80" Height="25" Margin="2"/>
+                            <Button x:Name="GetStatsBtn" Content="📊 Stats" Click="GetStats_Click" 
+                                   Width="80" Height="25" Margin="2"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Sync APIs Tile -->
+                <Border Background="LightYellow" BorderBrush="Orange" BorderThickness="2" 
+                       Margin="5" CornerRadius="10">
+                    <StackPanel Margin="15">
+                        <TextBlock Text="🔄 Sync APIs" FontSize="16" FontWeight="Bold" 
+                                  HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        
+                        <!-- Bulk Sync Options -->
+                        <GroupBox Header="Bulk Operations" Margin="0,0,0,10">
+                            <StackPanel Margin="5">
+                                <Button x:Name="BulkSyncRegistrationsBtn" Content="📤 Sync Registrations" 
+                                       Click="BulkSyncRegistrations_Click" Height="25" Margin="0,0,0,5"/>
+                                <Button x:Name="BulkSyncVerificationsBtn" Content="📤 Sync Verifications" 
+                                       Click="BulkSyncVerifications_Click" Height="25" Margin="0,0,0,5"/>
+                                <Button x:Name="GetSyncStatusBtn" Content="📊 Sync Status" 
+                                       Click="GetSyncStatus_Click" Height="25"/>
+                            </StackPanel>
+                        </GroupBox>
+                        
+                        <!-- Test Data Generator -->
+                        <GroupBox Header="Test Data">
+                            <StackPanel Margin="5">
+                                <Button x:Name="GenerateTestDataBtn" Content="🎲 Generate Test Data" 
+                                       Click="GenerateTestData_Click" Height="25" Margin="0,0,0,5"/>
+                                <TextBlock Text="Creates sample data for testing" FontSize="10" 
+                                          Foreground="Gray" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </Border>
+                
+            </UniformGrid>
+        </ScrollViewer>
+        
+        <!-- Response Area -->
+        <Border Grid.Row="2" BorderBrush="Gray" BorderThickness="1" CornerRadius="5">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Background="LightGray" Margin="10">
+                    <TextBlock Text="📡 API Response Log" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <Button x:Name="ClearResponseBtn" Content="🗑️ Clear" Margin="10,0,0,0" 
+                           Click="ClearResponse_Click" Height="25" Width="60"/>
+                    <Button x:Name="SaveLogBtn" Content="💾 Save Log" Margin="5,0,0,0" 
+                           Click="SaveLog_Click" Height="25" Width="70"/>
+                </StackPanel>
+                
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <TextBox x:Name="ResponseTextBox" IsReadOnly="True" TextWrapping="Wrap"
+                            FontFamily="Consolas" FontSize="11" Margin="5" BorderThickness="0"
+                            Text="🚀 API Test Console Ready! Configure your API base URL and start testing..."
+                            Background="Transparent"/>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

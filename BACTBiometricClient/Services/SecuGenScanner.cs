@@ -212,6 +212,12 @@ namespace BACTBiometricClient.Services
                     byte[] imageDataCopy = new byte[imageBuffer.Length];
                     Array.Copy(imageBuffer, imageDataCopy, imageBuffer.Length);
 
+                    // Use FingerprintProcessor for quality validation and feedback
+                    var qualityValidation = FingerprintProcessor.ValidateQuality(quality);
+                    string qualityMessage = qualityValidation.IsAcceptable 
+                        ? $"✓ {qualityValidation.Message}" 
+                        : $"⚠ {qualityValidation.Message}";
+
                     return new FingerprintCaptureResult
                     {
                         Success = true,
@@ -220,7 +226,7 @@ namespace BACTBiometricClient.Services
                         ImageWidth = _imageWidth,
                         ImageHeight = _imageHeight,
                         QualityScore = quality,
-                        Message = $"Captured (Quality: {quality}%)"
+                        Message = qualityMessage
                     };
                 }
                 catch (Exception ex)

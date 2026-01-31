@@ -210,6 +210,16 @@
                         </StackPanel>
                     </Border>
 
+                    <!-- API Test Button -->
+                    <Button x:Name="btnApiTest"
+                            Style="{StaticResource IconButton}"
+                            Background="#FF9800"
+                            Margin="0,0,8,0"
+                            ToolTip="API Test Console"
+                            Click="BtnApiTest_Click">
+                        <TextBlock Text="🧪" FontSize="16"/>
+                    </Button>
+
                     <!-- Settings Button -->
                     <Button Style="{StaticResource IconButton}"
                             Background="#1565C0"
